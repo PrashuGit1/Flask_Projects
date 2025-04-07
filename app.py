@@ -31,17 +31,35 @@ def get_data_for_date(date):
         }
     }
 
-@app.route("/")
-def home():
-    return render_template("index.html")
+from flask import Flask, request, jsonify, render_template
+import sqlite3
 
-@app.route("/data")
-def data():
+app = Flask(__name__)
+
+@app.route('/')
+def index():
+    return render_template('index.html')  # this loads your HTML page
+
+@app.route('/get_data', methods=['GET'])
+def get_data():
     date = request.args.get('date')
-    if not date:
-        return jsonify({"error": "Missing date"}), 400
-    result = get_data_for_date(date)
-    return jsonify(result)
+    code = request.args.get('code', 'NIFTY')  # default is NIFTY if none provided
 
-if __name__ == "__main__":
+    conn = sqlite3.connect('algo.db')
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM data WHERE datetime = ? AND code = ?", (date, code))
+    ohlc_data = cursor.fetchall()
+
+    cursor.execute("SELECT * FROM indicators WHERE datetime = ? AND code = ?", (date, code))
+    indicators_data = cursor.fetchall()
+
+    conn.close()
+
+    return jsonify({
+        "ohlc": ohlc_data,
+        "indicators": indicators_data
+    })
+
+if __name__ == '__main__':
     app.run(debug=True)
