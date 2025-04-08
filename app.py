@@ -1,64 +1,52 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, render_template, request, jsonify
 import sqlite3
 
 app = Flask(__name__)
 
-def get_data_for_date(date):
-    conn = sqlite3.connect('algo.db')
+def query_data(date):
+    conn = sqlite3.connect("algo.db")
     cursor = conn.cursor()
 
-    # Fetch OHLC data
-    cursor.execute("SELECT open, high, low, close FROM data WHERE datetime = ?", (date,))
+    # Fetch OHLC data for the date
+    cursor.execute("SELECT datetime, open, high, low, close FROM data WHERE datetime = ?", (date,))
     ohlc = cursor.fetchone()
 
-    # Fetch indicators
-    cursor.execute("SELECT sma, upper, lower FROM indicators WHERE datetime = ?", (date,))
+    # Fetch Bollinger Band indicators for the date
+    cursor.execute("SELECT datetime, sma, upper, lower FROM indicators WHERE datetime = ?", (date,))
     indicators = cursor.fetchone()
 
     conn.close()
-
-    return {
-        "data": {
-            "open": ohlc[0] if ohlc else None,
-            "high": ohlc[1] if ohlc else None,
-            "low": ohlc[2] if ohlc else None,
-            "close": ohlc[3] if ohlc else None
-        },
-        "indicators": {
-            "sma": indicators[0] if indicators else None,
-            "upper": indicators[1] if indicators else None,
-            "lower": indicators[2] if indicators else None
-        }
-    }
-
-from flask import Flask, request, jsonify, render_template
-import sqlite3
-
-app = Flask(__name__)
+    return ohlc, indicators
 
 @app.route('/')
 def index():
-    return render_template('index.html')  # this loads your HTML page
+    return render_template('index.html')
 
-@app.route('/get_data', methods=['GET'])
+@app.route('/get-data', methods=['GET'])  # <- Changed from POST to GET
 def get_data():
-    date = request.args.get('date')
-    code = request.args.get('code', 'NIFTY')  # default is NIFTY if none provided
+    date = request.args.get('date')       # <- Changed from form to args
+    print(f"📅 Received request for date: {date}")
 
-    conn = sqlite3.connect('algo.db')
-    cursor = conn.cursor()
+    ohlc, indicators = query_data(date)
+    print(f"📊 OHLC: {ohlc}")
+    print(f"📈 Indicators: {indicators}")
 
-    cursor.execute("SELECT * FROM data WHERE datetime = ? AND code = ?", (date, code))
-    ohlc_data = cursor.fetchall()
-
-    cursor.execute("SELECT * FROM indicators WHERE datetime = ? AND code = ?", (date, code))
-    indicators_data = cursor.fetchall()
-
-    conn.close()
+    if not ohlc or not indicators:
+        return jsonify({'error': 'No data found for the given date'})
 
     return jsonify({
-        "ohlc": ohlc_data,
-        "indicators": indicators_data
+        'ohlc': {
+            'datetime': ohlc[0],
+            'open': ohlc[1],
+            'high': ohlc[2],
+            'low': ohlc[3],
+            'close': ohlc[4]
+        },
+        'indicators': {
+            'sma': indicators[1],
+            'upper': indicators[2],
+            'lower': indicators[3]
+        }
     })
 
 if __name__ == '__main__':
