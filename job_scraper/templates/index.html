@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Job Listings</h1>
+<table>
+  <thead>
+    <tr>
+      <th>Title</th>
+      <th>Company</th>
+      <th>Location</th>
+      <th>Salary</th>
+      <th>Skills</th>
+      <th>Link</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for j in jobs %}
+    <tr>
+      <td>{{ j.title }}</td>
+      <td>{{ j.company }}</td>
+      <td>{{ j.location }}</td>
+      <td>{{ j.salary }}</td>
+      <td>{{ j.skills }}</td>
+      <td>{% if j.link %}<a href="{{ j.link }}" target="_blank">Apply</a>{% else %}-{% endif %}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% if not jobs %}
+  <p>No data yet. Click <strong>Scrape now</strong>.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,27 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>{{ title or "Job Scraper" }}</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 20px; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ddd; padding: 8px; vertical-align: top; }
+    th { background: #f4f4f4; text-align: left; }
+    .actions { margin-bottom: 16px; }
+    .flash { background:#e6ffed; border:1px solid #b2f5ea; padding:8px; margin-bottom:12px; }
+  </style>
+</head>
+<body>
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      {% for m in messages %}<div class="flash">{{ m }}</div>{% endfor %}
+    {% endif %}
+  {% endwith %}
+  <div class="actions">
+    <a href="{{ url_for('do_scrape') }}">Scrape now</a> |
+    <a href="{{ url_for('export_csv') }}">Export CSV</a>
+  </div>
+  {% block content %}{% endblock %}
+</body>
+</html>
